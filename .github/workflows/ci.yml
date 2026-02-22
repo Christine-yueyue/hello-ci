@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ['**']
   pull_request:
 
 permissions:
@@ -30,10 +30,18 @@ jobs:
       - name: Add current directory to PYTHONPATH
         run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
 
-      # This is a minimal "smoke test" (will add pytest later)
-      - name: Smoke test
+      - name: Run pytest
         run: |
-          python -c "import app; print('import ok')"
+          mkdir -p test-reports
+          pytest -q --junitxml=test-reports/junit.xml
+
+      - name: Upload test results
+        # Always upload test results, even if the tests fail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results
+          path: test-reports/junit.xml
 
       - name: Log in to GHCR
         if: github.event_name == 'push'
